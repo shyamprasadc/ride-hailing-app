@@ -1,0 +1,132 @@
+// Prisma Schema for Ride-Hailing Platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum DriverStatus {
+  AVAILABLE
+  ASSIGNED
+}
+
+enum RideRequestStatus {
+  REQUESTED
+  ASSIGNED
+  CANCELLED
+}
+
+enum TripStatus {
+  CREATED
+  STARTED
+  ENDED
+  PAID
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum Tier {
+  ECONOMY
+  PREMIUM
+}
+
+// ==================== MODELS ====================
+
+model Rider {
+  id           String        @id @default(uuid())
+  name         String
+  phone        String        @unique
+  email        String        @unique
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  
+  rideRequests RideRequest[]
+  trips        Trip[]
+
+  @@map("riders")
+}
+
+model Driver {
+  id           String        @id @default(uuid())
+  name         String
+  phone        String        @unique
+  status       DriverStatus  @default(AVAILABLE)
+  tier         Tier          @default(ECONOMY)
+  latitude     Float?
+  longitude    Float?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  
+  rideRequests RideRequest[]
+  trips        Trip[]
+
+  @@index([status, tier], name: "driver_availability_idx")
+  @@map("drivers")
+}
+
+model RideRequest {
+  id          String             @id @default(uuid())
+  riderId     String
+  pickupLat   Float
+  pickupLng   Float
+  destLat     Float
+  destLng     Float
+  tier        Tier               @default(ECONOMY)
+  status      RideRequestStatus  @default(REQUESTED)
+  driverId    String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  
+  rider       Rider              @relation(fields: [riderId], references: [id])
+  driver      Driver?            @relation(fields: [driverId], references: [id])
+  trip        Trip?
+
+  @@index([status], name: "ride_status_idx")
+  @@map("ride_requests")
+}
+
+model Trip {
+  id            String      @id @default(uuid())
+  rideRequestId String      @unique
+  driverId      String
+  riderId       String
+  status        TripStatus  @default(CREATED)
+  startTime     DateTime    @default(now())
+  endTime       DateTime?
+  fare          Float?
+  distance      Float?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  rideRequest   RideRequest @relation(fields: [rideRequestId], references: [id])
+  driver        Driver      @relation(fields: [driverId], references: [id])
+  rider         Rider       @relation(fields: [riderId], references: [id])
+  payment       Payment?
+
+  @@index([status], name: "trip_status_idx")
+  @@map("trips")
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  tripId        String        @unique
+  amount        Float
+  status        PaymentStatus @default(PENDING)
+  paymentMethod String        @default("CARD")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  trip          Trip          @relation(fields: [tripId], references: [id])
+
+  @@map("payments")
+}
