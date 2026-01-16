@@ -102,7 +102,7 @@ npm test
 
 ### Core Functionality
 - ✅ **Ride Creation**: Riders request rides with pickup/destination
-- ✅ **Driver Assignment**: Automatic or manual driver assignment
+- ✅ **Driver Assignment**: Manual driver acceptance with nearby rides discovery
 - ✅ **Trip Management**: Track trip lifecycle from creation to completion
 - ✅ **Payment Processing**: Simulated payment with fare calculation
 - ✅ **Real-time Updates**: Status polling every 3 seconds
@@ -290,8 +290,8 @@ MIT
 
 ## 👤 Author
 
-Built for demo/interview purposes
+Shyam Prasad
 
 ---
 
-**Ready to demo?** Follow the [Quick Start](#-quick-start) guide and run the [Demo Flow](#-demo-flow)!
+**Ready to use?** Follow the [Quick Start](#-quick-start) guide and run the [Demo Flow](#-demo-flow)!

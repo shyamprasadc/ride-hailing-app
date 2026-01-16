@@ -26,4 +26,11 @@ router.post(
   asyncHandler(async (req, res) => driverController.acceptRide(req, res))
 );
 
+// GET /v1/drivers/:id/nearby-rides - Get nearby ride requests
+router.get(
+  '/:id/nearby-rides',
+  validate(driverIdSchema, 'params'),
+  asyncHandler(async (req, res) => driverController.getNearbyRides(req, res))
+);
+
 export default router;

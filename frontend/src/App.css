@@ -217,3 +217,51 @@ footer {
   color: #666;
   font-size: 14px;
 }
+
+.info-message {
+  padding: 12px;
+  background: #dbeafe;
+  color: #1e40af;
+  border-radius: 6px;
+  border: 1px solid #93c5fd;
+  margin: 10px 0;
+}
+
+.nearby-rides-list {
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.ride-card {
+  padding: 15px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.ride-card:hover {
+  border-color: #2563eb;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+}
+
+.ride-info {
+  flex: 1;
+}
+
+.ride-info p {
+  margin: 4px 0;
+  font-size: 14px;
+  color: #374151;
+}
+
+.ride-card button {
+  margin-left: 15px;
+  white-space: nowrap;
+}
+

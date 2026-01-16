@@ -1,9 +1,6 @@
 import prisma from '../core/database';
 import Logger from '../core/Logger';
-import { BadRequestError, NoEntryError } from '../core/ApiError';
-import driverService from './driver.service';
-import { performance } from 'perf_hooks';
-import { recordMetric } from '../middlewares/performanceMonitoring';
+import { NoEntryError } from '../core/ApiError';
 
 interface CreateRideData {
   riderId: string;
@@ -16,7 +13,7 @@ interface CreateRideData {
 
 class RideService {
   /**
-   * Create ride request and assign nearest available driver
+   * Create ride request (manual driver acceptance)
    */
   async createRideRequest(data: CreateRideData) {
     // Verify rider exists
@@ -25,103 +22,26 @@ class RideService {
       throw new NoEntryError('Rider not found');
     }
 
-    // Find nearest available driver
-    const driverId = await driverService.findNearestAvailable(
-      data.pickupLat,
-      data.pickupLng,
-      data.tier
-    );
+    // Create ride request in REQUESTED state (no auto-assignment)
+    const rideRequest = await prisma.rideRequest.create({
+      data: {
+        riderId: data.riderId,
+        pickupLat: data.pickupLat,
+        pickupLng: data.pickupLng,
+        destLat: data.destLat,
+        destLng: data.destLng,
+        tier: data.tier as any,
+        status: 'REQUESTED',
+      },
+    });
 
-    if (!driverId) {
-      // No driver available - create request in REQUESTED state
-      const rideRequest = await prisma.rideRequest.create({
-        data: {
-          riderId: data.riderId,
-          pickupLat: data.pickupLat,
-          pickupLng: data.pickupLng,
-          destLat: data.destLat,
-          destLng: data.destLng,
-          tier: data.tier as any,
-          status: 'REQUESTED',
-        },
-      });
+    Logger.info(`Ride request ${rideRequest.id} created - waiting for driver acceptance`);
 
-      Logger.info(`Ride request ${rideRequest.id} created - no drivers available`);
-
-      return {
-        rideId: rideRequest.id,
-        status: rideRequest.status,
-        message: 'No drivers available. Your request is queued.',
-      };
-    }
-
-    // Assign driver and create trip (transaction)
-    const startMark = `ride-assignment-${Date.now()}`;
-    performance.mark(startMark);
-
-    try {
-      const result = await prisma.$transaction(async (tx:any) => {
-        // Verify driver is still available
-        const driver = await tx.driver.findUnique({ where: { id: driverId } });
-        if (!driver || driver.status !== 'AVAILABLE') {
-          throw new BadRequestError('Driver is no longer available');
-        }
-
-        // Create ride request
-        const rideRequest = await tx.rideRequest.create({
-          data: {
-            riderId: data.riderId,
-            pickupLat: data.pickupLat,
-            pickupLng: data.pickupLng,
-            destLat: data.destLat,
-            destLng: data.destLng,
-            tier: data.tier as any,
-            status: 'ASSIGNED',
-            driverId,
-          },
-        });
-
-        // Update driver status
-        await tx.driver.update({
-          where: { id: driverId },
-          data: { status: 'ASSIGNED' },
-        });
-
-        // Create trip
-        const trip = await tx.trip.create({
-          data: {
-            rideRequestId: rideRequest.id,
-            driverId,
-            riderId: data.riderId,
-            status: 'CREATED',
-          },
-        });
-
-        return { rideRequest, trip, driver };
-      });
-
-      Logger.info(`Ride request ${result.rideRequest.id} created and assigned to driver ${driverId}`);
-
-      return {
-        rideId: result.rideRequest.id,
-        tripId: result.trip.id,
-        status: result.rideRequest.status,
-        driver: {
-          id: result.driver.id,
-          name: result.driver.name,
-          phone: result.driver.phone,
-        },
-      };
-    } finally {
-      // Record metric
-      const endMark = `ride-assignment-end-${Date.now()}`;
-      performance.mark(endMark);
-      const measure = performance.measure('ride-assignment', startMark, endMark);
-      recordMetric('RideAssignment/TransactionTime', measure.duration);
-      performance.clearMarks(startMark);
-      performance.clearMarks(endMark);
-      performance.clearMeasures('ride-assignment');
-    }
+    return {
+      rideId: rideRequest.id,
+      status: rideRequest.status,
+      message: 'Ride request created. Waiting for driver to accept.',
+    };
   }
 
   /**

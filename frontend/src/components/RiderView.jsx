@@ -122,6 +122,11 @@ function RiderView() {
           <h3>Ride Status</h3>
           <p><strong>Ride ID:</strong> {rideId}</p>
           <p><strong>Status:</strong> <span className="status-badge">{rideStatus.status}</span></p>
+          
+          {rideStatus.status === 'REQUESTED' && (
+            <p className="info-message">🔍 Searching for drivers... Waiting for a driver to accept your ride.</p>
+          )}
+          
           {rideStatus.driver && (
             <div>
               <p><strong>Driver:</strong> {rideStatus.driver.name} ({rideStatus.driver.phone})</p>

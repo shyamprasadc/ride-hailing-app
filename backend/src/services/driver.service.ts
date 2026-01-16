@@ -4,6 +4,7 @@ import Logger from '../core/Logger';
 import { BadRequestError, NoEntryError } from '../core/ApiError';
 import { performance } from 'perf_hooks';
 import { recordMetric } from '../middlewares/performanceMonitoring';
+import { calculateHaversineDistance } from '../helpers/distance';
 
 interface DriverLocation {
   id: string;
@@ -35,6 +36,71 @@ class DriverService {
     }
 
     Logger.info(`Driver ${driverId} location updated: (${latitude}, ${longitude})`);
+  }
+
+  /**
+   * Get nearby ride requests for a driver
+   */
+  async getNearbyRides(driverId: string, radiusKm: number = 10) {
+    // Get driver's current location
+    const driver = await prisma.driver.findUnique({ where: { id: driverId } });
+    if (!driver) {
+      throw new NoEntryError('Driver not found');
+    }
+
+    if (!driver.latitude || !driver.longitude) {
+      throw new BadRequestError('Driver location not set. Please update your location first.');
+    }
+
+    // Get all REQUESTED rides
+    const requestedRides = await prisma.rideRequest.findMany({
+      where: {
+        status: 'REQUESTED',
+        tier: driver.tier, // Only show rides matching driver's tier
+      },
+      include: {
+        rider: {
+          select: { id: true, name: true, phone: true },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    // Calculate distance for each ride and filter by radius
+    const nearbyRides = requestedRides
+      .map((ride) => {
+        const distance = calculateHaversineDistance(
+          driver.latitude!,
+          driver.longitude!,
+          ride.pickupLat,
+          ride.pickupLng
+        );
+
+        return {
+          id: ride.id,
+          riderId: ride.riderId,
+          rider: ride.rider,
+          pickup: {
+            latitude: ride.pickupLat,
+            longitude: ride.pickupLng,
+          },
+          destination: {
+            latitude: ride.destLat,
+            longitude: ride.destLng,
+          },
+          tier: ride.tier,
+          distance, // in km
+          createdAt: ride.createdAt,
+        };
+      })
+      .filter((ride) => ride.distance <= radiusKm)
+      .sort((a, b) => a.distance - b.distance); // Sort by distance (nearest first)
+
+    Logger.info(`Found ${nearbyRides.length} nearby rides for driver ${driverId} within ${radiusKm}km`);
+
+    return nearbyRides;
   }
 
   /**

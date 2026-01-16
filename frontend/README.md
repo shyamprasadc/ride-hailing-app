@@ -32,14 +32,16 @@ Minimal React frontend to demonstrate the ride-hailing backend APIs.
 - Enter pickup and destination coordinates
 - Select tier (Economy/Premium)
 - Click "Create Ride"
-- Copy the **Ride ID** displayed in the status card
+- Ride status will show "REQUESTED" with message "Searching for drivers..."
+- Wait for a driver to accept (status will update to "ASSIGNED")
 
 ### 2. Driver View
 - Select a driver from the dropdown
-- (Optional) Update driver location
-- Paste the **Ride ID** from step 1
-- Click "Accept Ride"
-- Note the **Trip ID** created
+- Update driver location (required to see nearby rides)
+- View "Nearby Ride Requests" section
+- Rides are displayed with distance, rider info, and tier
+- Click "Accept Ride" on any available ride
+- Note the **Trip ID** created after acceptance
 
 ### 3. Trip & Payment View
 - Paste the **Trip ID** from step 2
@@ -48,10 +50,11 @@ Minimal React frontend to demonstrate the ride-hailing backend APIs.
 
 ## API Endpoints Used
 
-- `POST /v1/rides` - Create ride request
+- `POST /v1/rides` - Create ride request (status: REQUESTED)
 - `GET /v1/rides/:id` - Get ride status (polled every 3s)
+- `GET /v1/drivers/:id/nearby-rides` - Get nearby ride requests
 - `POST /v1/drivers/:id/location` - Update driver location
-- `POST /v1/drivers/:id/accept` - Accept ride
+- `POST /v1/drivers/:id/accept` - Accept ride (manual)
 - `POST /v1/trips/:id/end` - End trip
 - `POST /v1/payments` - Process payment
 - `GET /v1/data/riders` - Fetch riders

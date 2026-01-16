@@ -6,7 +6,7 @@ function DriverView() {
   const [selectedDriver, setSelectedDriver] = useState('');
   const [latitude, setLatitude] = useState('37.7849');
   const [longitude, setLongitude] = useState('-122.4094');
-  const [rideId, setRideId] = useState('');
+  const [nearbyRides, setNearbyRides] = useState([]);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -22,6 +22,30 @@ function DriverView() {
       })
       .catch(() => setError('Failed to fetch drivers'));
   }, []);
+
+  // Fetch nearby rides when driver changes or periodically
+  useEffect(() => {
+    if (!selectedDriver) return;
+
+    const fetchNearbyRides = () => {
+      fetch(`${API_BASE_URL}/drivers/${selectedDriver}/nearby-rides?radius=10`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.data && Array.isArray(data.data)) {
+            setNearbyRides(data.data);
+          }
+        })
+        .catch(() => {});
+    };
+
+    // Fetch immediately
+    fetchNearbyRides();
+
+    // Poll every 5 seconds
+    const interval = setInterval(fetchNearbyRides, 5000);
+
+    return () => clearInterval(interval);
+  }, [selectedDriver]);
 
   const updateLocation = async () => {
     setError('');
@@ -47,13 +71,9 @@ function DriverView() {
     }
   };
 
-  const acceptRide = async () => {
+  const acceptRide = async (rideId) => {
     setError('');
     setMessage('');
-    if (!rideId) {
-      setError('Please enter a ride ID');
-      return;
-    }
 
     try {
       const response = await fetch(`${API_BASE_URL}/drivers/${selectedDriver}/accept`, {
@@ -65,6 +85,8 @@ function DriverView() {
       const data = await response.json();
       if (response.ok) {
         setMessage('Ride accepted successfully!');
+        // Remove accepted ride from list
+        setNearbyRides(nearbyRides.filter(ride => ride.id !== rideId));
       } else {
         setError(data.message || 'Failed to accept ride');
       }
@@ -101,20 +123,31 @@ function DriverView() {
       </div>
       <button onClick={updateLocation} className="btn-secondary">Update Location</button>
 
-      <h3>Accept Ride</h3>
-      <div className="form-group">
-        <label>Ride ID:</label>
-        <input 
-          type="text" 
-          value={rideId} 
-          onChange={(e) => setRideId(e.target.value)}
-          placeholder="Enter ride ID from Rider view"
-        />
-      </div>
-      <button onClick={acceptRide} className="btn-primary">Accept Ride</button>
-
       {message && <div className="success">{message}</div>}
       {error && <div className="error">{error}</div>}
+
+      <h3>Nearby Ride Requests ({nearbyRides.length})</h3>
+      {nearbyRides.length === 0 ? (
+        <p className="info-message">No nearby ride requests at the moment.</p>
+      ) : (
+        <div className="nearby-rides-list">
+          {nearbyRides.map(ride => (
+            <div key={ride.id} className="ride-card">
+              <div className="ride-info">
+                <p><strong>Ride ID:</strong> {ride.id}</p>
+                <p><strong>Rider:</strong> {ride.rider.name}</p>
+                <p><strong>Pickup:</strong> ({ride.pickup.latitude.toFixed(4)}, {ride.pickup.longitude.toFixed(4)})</p>
+                <p><strong>Destination:</strong> ({ride.destination.latitude.toFixed(4)}, {ride.destination.longitude.toFixed(4)})</p>
+                <p><strong>Distance:</strong> {ride.distance.toFixed(2)} km</p>
+                <p><strong>Tier:</strong> {ride.tier}</p>
+              </div>
+              <button onClick={() => acceptRide(ride.id)} className="btn-primary">Accept Ride</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+
     </div>
   );
 }

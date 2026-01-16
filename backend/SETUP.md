@@ -93,7 +93,7 @@ curl -X POST http://localhost:3000/v1/rides \
   }'
 ```
 
-**Response**: Returns `rideId`, `tripId`, `status`, and assigned `driver` details.
+**Response**: Returns `rideId`, `status` (REQUESTED), and message.
 
 ### 2. Get Ride Status
 
@@ -150,7 +150,7 @@ curl -X POST http://localhost:3000/v1/payments \
 
 ### Scenario 1: Complete Ride Flow
 
-1. Create ride request → Driver auto-assigned
+1. Create ride request → Ride status: REQUESTED
 2. Get ride status → Verify driver assigned
 3. End trip → Verify fare calculated
 4. Process payment → Verify payment success

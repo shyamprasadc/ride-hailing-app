@@ -102,19 +102,21 @@ A minimal ride-hailing platform demonstrating core functionality: riders request
 1. RIDE CREATION
    Rider → POST /v1/rides
    ├─ Validate rider exists
-   ├─ Find nearest available driver (Redis cache)
-   ├─ If driver found:
-   │  ├─ Create RideRequest (status: ASSIGNED)
-   │  ├─ Update driver status (ASSIGNED)
-   │  └─ Create Trip (status: CREATED)
-   └─ If no driver:
-      └─ Create RideRequest (status: REQUESTED)
+   └─ Create RideRequest (status: REQUESTED)
 
-2. DRIVER ACCEPTANCE (if manual)
+2. DRIVER VIEWS NEARBY RIDES
+   Driver → GET /v1/drivers/:id/nearby-rides
+   ├─ Get driver's current location
+   ├─ Query all REQUESTED rides matching driver's tier
+   ├─ Calculate distance using Haversine formula
+   ├─ Filter by radius (default 10km)
+   └─ Return sorted by distance (nearest first)
+
+3. DRIVER ACCEPTANCE
    Driver → POST /v1/drivers/:id/accept
    ├─ Verify driver is AVAILABLE
    ├─ Verify ride is REQUESTED
-   ├─ Transaction:
+   ├─ Transaction (prevents race conditions):
    │  ├─ Update RideRequest (status: ASSIGNED, driverId)
    │  ├─ Update Driver (status: ASSIGNED)
    │  └─ Create Trip (status: CREATED)
@@ -205,13 +207,8 @@ http://localhost:3000/v1
   "message": "Ride request created successfully",
   "data": {
     "rideId": "uuid",
-    "tripId": "uuid",
-    "status": "ASSIGNED",
-    "driver": {
-      "id": "uuid",
-      "name": "Driver Name",
-      "phone": "+1234567890"
-    }
+    "status": "REQUESTED",
+    "message": "Ride request created. Waiting for driver to accept."
   }
 }
 ```
@@ -262,7 +259,44 @@ http://localhost:3000/v1
 }
 ```
 
-### 4. Accept Ride Request
+### 4. Get Nearby Ride Requests
+
+**Endpoint**: `GET /v1/drivers/:id/nearby-rides?radius=10`
+
+**Query Parameters**:
+- `radius` (optional): Search radius in kilometers (default: 10)
+
+**Response** (200):
+```json
+{
+  "statusCode": "10000",
+  "message": "Nearby rides fetched successfully",
+  "data": [
+    {
+      "id": "uuid",
+      "riderId": "uuid",
+      "rider": {
+        "id": "uuid",
+        "name": "Rider Name",
+        "phone": "+1234567890"
+      },
+      "pickup": {
+        "latitude": 37.7749,
+        "longitude": -122.4194
+      },
+      "destination": {
+        "latitude": 37.8049,
+        "longitude": -122.3894
+      },
+      "tier": "ECONOMY",
+      "distance": 1.42,
+      "createdAt": "2026-01-15T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+### 5. Accept Ride Request
 
 **Endpoint**: `POST /v1/drivers/:id/accept`
 
@@ -281,7 +315,7 @@ http://localhost:3000/v1
 }
 ```
 
-### 5. End Trip
+### 6. End Trip
 
 **Endpoint**: `POST /v1/trips/:id/end`
 
@@ -646,7 +680,7 @@ await redis.set(
   'EX', 3600 // 1 hour TTL
 );
 
-// Read from cache when finding nearest driver
+// Cache driver locations for nearby ride queries
 const drivers = await redis.keys('driver:*:location');
 const locations = await Promise.all(
   drivers.map(key => redis.get(key))
@@ -799,8 +833,7 @@ await prisma.$transaction(async (tx) => {
    - `Custom/API/{METHOD}{PATH}/Error` - Error count
 
 2. **Custom Business Metrics**:
-   - `Custom/DriverMatching/Duration` - Time to find nearest driver
-   - `Custom/RideAssignment/TransactionTime` - Ride creation transaction
+   - `Custom/RideAssignment/TransactionTime` - Driver acceptance transaction
    - `Custom/TripEnd/TransactionTime` - Trip completion transaction
    - `Custom/RateLimit/Exceeded` - Rate limit violations
 
