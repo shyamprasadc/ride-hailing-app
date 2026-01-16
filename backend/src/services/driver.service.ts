@@ -2,9 +2,8 @@ import prisma from '../core/database';
 import getRedisClient from '../core/redis';
 import Logger from '../core/Logger';
 import { BadRequestError, NoEntryError } from '../core/ApiError';
-import { performance } from 'perf_hooks';
-import { recordMetric } from '../middlewares/performanceMonitoring';
 import { calculateHaversineDistance } from '../helpers/distance';
+import { startPerformanceMeasure, measurePerformance } from '../helpers/performanceHelper';
 
 interface DriverLocation {
   id: string;
@@ -166,8 +165,9 @@ class DriverService {
     longitude: number,
     tier: string
   ): Promise<string | null> {
-    const startMark = `driver-matching-${Date.now()}`;
-    performance.mark(startMark);
+    // Start performance measurement
+    const startMark = startPerformanceMeasure('driver-matching');
+    const recordPerformance = measurePerformance('DriverMatching/Duration', 'driver-matching', startMark);
 
     try {
       // Try Redis cache first
@@ -214,14 +214,7 @@ class DriverService {
 
       return nearestDriver.id;
     } finally {
-      // Record metric
-      const endMark = `driver-matching-end-${Date.now()}`;
-      performance.mark(endMark);
-      const measure = performance.measure('driver-matching', startMark, endMark);
-      recordMetric('DriverMatching/Duration', measure.duration);
-      performance.clearMarks(startMark);
-      performance.clearMarks(endMark);
-      performance.clearMeasures('driver-matching');
+      recordPerformance();
     }
   }
 

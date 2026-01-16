@@ -17,8 +17,8 @@ try {
  * Tracks API latency and error rates using perf_hooks
  */
 export const performanceMonitoring = (req: Request, res: Response, next: NextFunction) => {
-  const startMark = `${req.method}-${req.path}-start-${Date.now()}`;
-  const endMark = `${req.method}-${req.path}-end-${Date.now()}`;
+  const startMark = `${req.method}-${req.path}-start-${performance.now()}`;
+  const endMark = `${req.method}-${req.path}-end-${performance.now()}`;
   const measureName = `${req.method} ${req.path}`;
 
   // Mark request start

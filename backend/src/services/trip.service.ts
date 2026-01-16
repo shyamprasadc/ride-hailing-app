@@ -2,16 +2,15 @@ import prisma from '../core/database';
 import Logger from '../core/Logger';
 import { BadRequestError, NoEntryError } from '../core/ApiError';
 import { fareRates } from '../config';
-import { performance } from 'perf_hooks';
-import { recordMetric } from '../middlewares/performanceMonitoring';
+import { startPerformanceMeasure, measurePerformance } from '../helpers/performanceHelper';
 
 class TripService {
   /**
    * End trip, calculate fare, and free driver (transaction)
    */
   async endTrip(tripId: string) {
-    const startMark = `trip-end-${Date.now()}`;
-    performance.mark(startMark);
+    const startMark = startPerformanceMeasure('trip-end');
+    const recordPerformance = measurePerformance('TripEnd/TransactionTime', 'trip-end', startMark);
 
     try {
       const result = await prisma.$transaction(async (tx:any) => {
@@ -73,14 +72,7 @@ class TripService {
         fare: result.fare,
       };
     } finally {
-      // Record metric
-      const endMark = `trip-end-end-${Date.now()}`;
-      performance.mark(endMark);
-      const measure = performance.measure('trip-end', startMark, endMark);
-      recordMetric('TripEnd/TransactionTime', measure.duration);
-      performance.clearMarks(startMark);
-      performance.clearMarks(endMark);
-      performance.clearMeasures('trip-end');
+      recordPerformance();
     }
   }
 
