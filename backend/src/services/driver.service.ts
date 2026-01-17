@@ -303,6 +303,17 @@ class DriverService {
         }
       }
 
+      // Verify driver is still AVAILABLE in database (cache might be stale)
+      const dbDriver = await prisma.driver.findUnique({
+        where: { id: nearestDriver.id },
+        select: { status: true },
+      });
+
+      if (!dbDriver || dbDriver.status !== 'AVAILABLE') {
+        // Driver not available, fall back to database query
+        return null;
+      }
+
       return nearestDriver.id;
     } catch (error) {
       Logger.error('Failed to find nearest driver from cache:', error);

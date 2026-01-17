@@ -31,8 +31,10 @@ Minimal React frontend to demonstrate the ride-hailing backend APIs.
 - Select a rider from the dropdown (populated from seed data)
 - Enter pickup and destination coordinates
 - Select tier (Economy/Premium)
+- **Optional**: Check "Auto-assign driver" for automatic assignment
 - Click "Create Ride"
-- Ride status will show "REQUESTED" with message "Searching for drivers..."
+- If auto-assign enabled and driver found: Shows driver details immediately
+- If manual or no driver: Ride status shows "REQUESTED" with message "Searching for drivers..."
 - Wait for a driver to accept (status will update to "ASSIGNED")
 
 ### 2. Driver View
@@ -50,7 +52,7 @@ Minimal React frontend to demonstrate the ride-hailing backend APIs.
 
 ## API Endpoints Used
 
-- `POST /v1/rides` - Create ride request (status: REQUESTED)
+- `POST /v1/rides` - Create ride request (supports optional `autoAssign` parameter)
 - `GET /v1/rides/:id` - Get ride status (polled every 3s)
 - `GET /v1/drivers/:id/nearby-rides` - Get nearby ride requests
 - `POST /v1/drivers/:id/location` - Update driver location

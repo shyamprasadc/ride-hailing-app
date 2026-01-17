@@ -9,6 +9,7 @@ function RiderView() {
   const [destLat, setDestLat] = useState('37.8049');
   const [destLng, setDestLng] = useState('-122.3894');
   const [tier, setTier] = useState('ECONOMY');
+  const [autoAssign, setAutoAssign] = useState(false);
   const [rideId, setRideId] = useState('');
   const [rideStatus, setRideStatus] = useState(null);
   const [error, setError] = useState('');
@@ -55,6 +56,7 @@ function RiderView() {
           destLat: parseFloat(destLat),
           destLng: parseFloat(destLng),
           tier,
+          autoAssign,
         }),
       });
 
@@ -111,6 +113,18 @@ function RiderView() {
           <option value="ECONOMY">Economy</option>
           <option value="PREMIUM">Premium</option>
         </select>
+      </div>
+
+      <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <input 
+          type="checkbox" 
+          id="autoAssign" 
+          checked={autoAssign} 
+          onChange={(e) => setAutoAssign(e.target.checked)}
+        />
+        <label htmlFor="autoAssign" style={{ margin: 0, cursor: 'pointer' }}>
+          Auto-assign driver
+        </label>
       </div>
 
       <button onClick={createRide} className="btn-primary">Create Ride</button>

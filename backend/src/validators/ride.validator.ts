@@ -8,6 +8,7 @@ export const createRideSchema = Joi.object({
   destLat: Joi.number().min(-90).max(90).required(),
   destLng: Joi.number().min(-180).max(180).required(),
   tier: Joi.string().valid('ECONOMY', 'PREMIUM').default('ECONOMY'),
+  autoAssign: Joi.boolean().optional().default(false),
 });
 
 // Get Ride by ID

@@ -196,11 +196,15 @@ http://localhost:3000/v1
   "pickupLng": -122.4194,
   "destLat": 37.8049,
   "destLng": -122.3894,
-  "tier": "ECONOMY"
+  "tier": "ECONOMY",
+  "autoAssign": false
 }
 ```
 
-**Response** (200):
+**Parameters**:
+- `autoAssign` (optional, boolean, default: `false`): If `true`, automatically assigns nearest available driver. If `false` or omitted, creates ride in REQUESTED status for manual driver acceptance.
+
+**Response** (200) - Manual acceptance or no driver available:
 ```json
 {
   "statusCode": "10000",
@@ -209,6 +213,24 @@ http://localhost:3000/v1
     "rideId": "uuid",
     "status": "REQUESTED",
     "message": "Ride request created. Waiting for driver to accept."
+  }
+}
+```
+
+**Response** (200) - Auto-assign with driver found:
+```json
+{
+  "statusCode": "10000",
+  "message": "Ride request created successfully",
+  "data": {
+    "rideId": "uuid",
+    "tripId": "uuid",
+    "status": "ASSIGNED",
+    "driver": {
+      "id": "uuid",
+      "name": "Driver Name",
+      "phone": "+1234567890"
+    }
   }
 }
 ```

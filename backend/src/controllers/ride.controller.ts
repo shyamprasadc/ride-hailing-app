@@ -8,7 +8,7 @@ class RideController {
    * Create a new ride request
    */
   async createRide(req: Request, res: Response) {
-    const { riderId, pickupLat, pickupLng, destLat, destLng, tier } = req.body;
+    const { riderId, pickupLat, pickupLng, destLat, destLng, tier, autoAssign } = req.body;
 
     const result = await rideService.createRideRequest({
       riderId,
@@ -17,6 +17,7 @@ class RideController {
       destLat,
       destLng,
       tier,
+      autoAssign: autoAssign || false,
     });
 
     return new SuccessResponse('Ride request created successfully', result).send(res);

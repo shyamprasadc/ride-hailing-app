@@ -1,6 +1,7 @@
 import prisma from '../core/database';
 import Logger from '../core/Logger';
 import { NoEntryError } from '../core/ApiError';
+import driverService from './driver.service';
 
 interface CreateRideData {
   riderId: string;
@@ -9,11 +10,12 @@ interface CreateRideData {
   destLat: number;
   destLng: number;
   tier: string;
+  autoAssign?: boolean;
 }
 
 class RideService {
   /**
-   * Create ride request (manual driver acceptance)
+   * Create ride request with optional auto-assignment
    */
   async createRideRequest(data: CreateRideData) {
     // Verify rider exists
@@ -22,7 +24,72 @@ class RideService {
       throw new NoEntryError('Rider not found');
     }
 
-    // Create ride request in REQUESTED state (no auto-assignment)
+    // If auto-assign is enabled, try to find nearest driver
+    if (data.autoAssign) {
+      const driverId = await driverService.findNearestAvailable(
+        data.pickupLat,
+        data.pickupLng,
+        data.tier
+      );
+
+      // If driver found, create assigned ride with trip
+      if (driverId) {
+        const result = await prisma.$transaction(async (tx: any) => {
+          // Create ride request in ASSIGNED state
+          const rideRequest = await tx.rideRequest.create({
+            data: {
+              riderId: data.riderId,
+              driverId,
+              pickupLat: data.pickupLat,
+              pickupLng: data.pickupLng,
+              destLat: data.destLat,
+              destLng: data.destLng,
+              tier: data.tier as any,
+              status: 'ASSIGNED',
+            },
+          });
+
+          // Update driver status
+          await tx.driver.update({
+            where: { id: driverId },
+            data: { status: 'ASSIGNED' },
+          });
+
+          // Create trip
+          const trip = await tx.trip.create({
+            data: {
+              rideRequestId: rideRequest.id,
+              driverId,
+              riderId: data.riderId,
+              status: 'CREATED',
+              startTime: new Date(),
+            },
+          });
+
+          // Get driver details
+          const driver = await tx.driver.findUnique({
+            where: { id: driverId },
+            select: { id: true, name: true, phone: true },
+          });
+
+          return { rideRequest, trip, driver };
+        });
+
+        Logger.info(`Ride request ${result.rideRequest.id} auto-assigned to driver ${driverId}`);
+
+        return {
+          rideId: result.rideRequest.id,
+          tripId: result.trip.id,
+          status: result.rideRequest.status,
+          driver: result.driver,
+        };
+      }
+
+      // No driver found, fall through to manual acceptance
+      Logger.info('Auto-assign requested but no drivers available, creating REQUESTED ride');
+    }
+
+    // Manual acceptance or no driver available
     const rideRequest = await prisma.rideRequest.create({
       data: {
         riderId: data.riderId,

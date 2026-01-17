@@ -48,11 +48,11 @@ async function main() {
     { name: 'Grace Lee', phone: '+1111111114', status: 'AVAILABLE', tier: 'PREMIUM', lat: 37.7949, lng: -122.3994 },
     { name: 'Henry Taylor', phone: '+1111111115', status: 'AVAILABLE', tier: 'ECONOMY', lat: 37.7549, lng: -122.4394 },
     // ASSIGNED drivers (simulating ongoing rides)
-    { name: 'Ivy Anderson', phone: '+1111111116', status: 'ASSIGNED', tier: 'ECONOMY', lat: 37.8049, lng: -122.3894 },
-    { name: 'Jack Thomas', phone: '+1111111117', status: 'ASSIGNED', tier: 'PREMIUM', lat: 37.7449, lng: -122.4494 },
-    { name: 'Kelly White', phone: '+1111111118', status: 'ASSIGNED', tier: 'ECONOMY', lat: 37.8149, lng: -122.3794 },
-    { name: 'Liam Harris', phone: '+1111111119', status: 'ASSIGNED', tier: 'PREMIUM', lat: 37.7349, lng: -122.4594 },
-    { name: 'Mia Martin', phone: '+1111111120', status: 'ASSIGNED', tier: 'ECONOMY', lat: 37.8249, lng: -122.3694 },
+    { name: 'Ivy Anderson', phone: '+1111111116', status: 'AVAILABLE', tier: 'ECONOMY', lat: 37.8049, lng: -122.3894 },
+    { name: 'Jack Thomas', phone: '+1111111117', status: 'AVAILABLE', tier: 'PREMIUM', lat: 37.7449, lng: -122.4494 },
+    { name: 'Kelly White', phone: '+1111111118', status: 'AVAILABLE', tier: 'ECONOMY', lat: 37.8149, lng: -122.3794 },
+    { name: 'Liam Harris', phone: '+1111111119', status: 'AVAILABLE', tier: 'PREMIUM', lat: 37.7349, lng: -122.4594 },
+    { name: 'Mia Martin', phone: '+1111111120', status: 'AVAILABLE', tier: 'ECONOMY', lat: 37.8249, lng: -122.3694 },
   ];
 
   const drivers = await Promise.all(

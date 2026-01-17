@@ -89,9 +89,13 @@ curl -X POST http://localhost:3000/v1/rides \
     "pickupLng": -122.4194,
     "destLat": 37.7849,
     "destLng": -122.4094,
-    "tier": "ECONOMY"
+    "tier": "ECONOMY",
+    "autoAssign": false
   }'
 ```
+
+**Parameters**:
+- `autoAssign` (optional, default: `false`): Set to `true` for automatic driver assignment
 
 **Response**: Returns `rideId`, `status` (REQUESTED), and message.
 

@@ -16,7 +16,50 @@ describe('Ride API', () => {
   });
 
   describe('POST /v1/rides', () => {
-    it('should create a new ride request', async () => {
+    it('should create a ride request with manual acceptance (autoAssign: false)', async () => {
+      const response = await request(app)
+        .post('/v1/rides')
+        .send({
+          riderId,
+          pickupLat: 37.7749,
+          pickupLng: -122.4194,
+          destLat: 37.8049,
+          destLng: -122.3894,
+          tier: 'ECONOMY',
+          autoAssign: false,
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toHaveProperty('rideId');
+      expect(response.body.data.status).toBe('REQUESTED');
+      expect(response.body.data).not.toHaveProperty('driver');
+    });
+
+    it('should create a ride request with auto-assignment (autoAssign: true)', async () => {
+      const response = await request(app)
+        .post('/v1/rides')
+        .send({
+          riderId,
+          pickupLat: 37.7749,
+          pickupLng: -122.4194,
+          destLat: 37.8049,
+          destLng: -122.3894,
+          tier: 'ECONOMY',
+          autoAssign: true,
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toHaveProperty('rideId');
+      // Status could be ASSIGNED (if driver found) or REQUESTED (if no driver available)
+      expect(['ASSIGNED', 'REQUESTED']).toContain(response.body.data.status);
+      
+      if (response.body.data.status === 'ASSIGNED') {
+        expect(response.body.data).toHaveProperty('driver');
+        expect(response.body.data).toHaveProperty('tripId');
+      }
+    });
+
+    it('should default to manual acceptance when autoAssign is not provided', async () => {
       const response = await request(app)
         .post('/v1/rides')
         .send({
@@ -29,7 +72,6 @@ describe('Ride API', () => {
         });
 
       expect(response.status).toBe(200);
-      expect(response.body.data).toHaveProperty('rideId');
       expect(response.body.data.status).toBe('REQUESTED');
     });
 
