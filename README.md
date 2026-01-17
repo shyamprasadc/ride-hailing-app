@@ -140,7 +140,7 @@ npm test
 ## 📚 Documentation
 
 - **[Technical Documentation](./TECHNICAL_DOCUMENTATION.md)**: Complete HLD, LLD, API specs, database schema
-- **[Backend README](./backend/README.md)**: Backend-specific documentation
+- **[Backend README](./backend/README.md)**: Backend setup and API testing guide
 - **[Frontend README](./frontend/README.md)**: Frontend setup and demo flow
 - **[E2E Test Report](./e2e_test_report.md)**: End-to-end validation results
 
